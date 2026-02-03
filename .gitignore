@@ -4,8 +4,5 @@ __pycache__/
 !model_scaler.pkl
 ffmpeg.exe
 ffprobe.exe
-dataset/
-!dataset/real/.keep
-!dataset/ai/.keep
 debug_output*.txt
 .env
