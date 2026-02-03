@@ -7,4 +7,6 @@ librosa
 pydub
 scikit-learn
 numpy
-joblibpython-dotenv==1.1.1
+joblib
+python-dotenv
+requests
