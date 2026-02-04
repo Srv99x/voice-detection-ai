@@ -41,7 +41,7 @@ if os.path.exists(ffprobe_path):
 # Rule 2: Must support 5 languages. We use XLSR-53 (Multilingual)
 print("Loading Multilingual Brain...")
 processor = Wav2Vec2FeatureExtractor.from_pretrained("facebook/wav2vec2-large-xlsr-53")
-model = Wav2Vec2Model.from_pretrained("facebook/wav2vec2-large-xlsr-53")
+model = Wav2Vec2Model.from_pretrained("facebook/wav2vec2-large-xlsr-53", use_safetensors=True)
 
 # Load Classifier AND Scaler
 classifier = joblib.load("hackathon_model.pkl")
@@ -96,6 +96,11 @@ async def detect_voice(request: VoiceRequest, api_key: str = Depends(verify_api_
         
         prediction = classifier.predict(embedding_scaled)[0]
         confidence = float(classifier.predict_proba(embedding_scaled)[0].max())
+
+        # --- DEBUGGING PRINT ---
+        probs = classifier.predict_proba(embedding_scaled)[0]
+        print(f"🔍 DEBUG: Human Score: {probs[0]:.4f} | AI Score: {probs[1]:.4f}")
+        # -----------------------
         
         # 5. STRICT OUTPUT FORMAT (Rule 8)
         # Must be AI_GENERATED or HUMAN

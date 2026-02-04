@@ -1,8 +1,14 @@
+# Ignore the virtual environment (heavy system files)
+.venv/
+venv/
+env/
+
+# Ignore the dataset (huge audio files)
+dataset/
+
+# Ignore cache files
 __pycache__/
-*.pkl
-!hackathon_model.pkl
-!model_scaler.pkl
-ffmpeg.exe
-ffprobe.exe
-debug_output*.txt
-.env
+*.pyc
+
+# (Optional) Keep the model files because Hugging Face needs them
+# but normally we ignore them. For now, keep them.

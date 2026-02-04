@@ -3,138 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Voice Detector</title>
+    <title>AI Voice Detector | Neural Network</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f0f2f5; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; margin-bottom: 10px; }
-        p.subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-        
-        .upload-box { 
-            border: 2px dashed #ccc; 
-            padding: 40px; 
-            text-align: center; 
-            margin: 20px 0; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            transition: all 0.3s ease;
+        /* --- CSS: The Visual Style --- */
+        :root {
+            --primary: #00f2ff; /* Cyber Cyan */
+            --secondary: #7000ff; /* Neon Purple */
+            --bg: #0a0a0a;
+            --card: #161616;
+            --text: #ffffff;
         }
-        .upload-box:hover { border-color: #007bff; background: #f8f9fa; }
-        
-        button { 
-            width: 100%; 
-            padding: 15px; 
-            background: #007bff; 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 16px; 
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.1);
+            width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5rem;
+        }
+
+        .upload-box {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-box:hover {
+            border-color: var(--primary);
+            background: rgba(0, 242, 255, 0.05);
+        }
+
+        /* The hidden file input */
+        #audioInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, var(--secondary), var(--primary));
+            border: none;
+            padding: 12px 30px;
+            color: white;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
             font-weight: bold;
-            cursor: pointer; 
-            transition: background 0.2s;
+            transition: transform 0.2s;
+            width: 100%;
         }
-        button:hover { background: #0056b3; }
-        
-        #result { margin-top: 30px; display: none; padding-top: 20px; border-top: 1px solid #eee; }
-        .result-title { font-size: 1.2em; margin-bottom: 10px; }
-        
-        /* Dynamic Colors for Results */
-        .human { color: #28a745; font-weight: bold; font-size: 1.4em; }
-        .ai { color: #dc3545; font-weight: bold; font-size: 1.4em; }
-        
-        .reasons { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95em; line-height: 1.6; }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(112, 0, 255, 0.4);
+        }
+
+        /* Result Area */
+        #result {
+            margin-top: 20px;
+            display: none; /* Hidden by default */
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .human {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+
+        .ai {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff0000;
+            color: #ff5555;
+        }
+
+        /* Loading Animation */
+        .loader {
+            display: none;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h1>🛡️ SatyaVachan: AI Voice Guard</h1>
-        <p class="subtitle">Upload an audio file (MP3) to verify if it's Human or AI.</p>
-        
-        <input type="file" id="audioFile" accept="audio/*" style="display: none;" onchange="showFileName()">
-        <div class="upload-box" onclick="document.getElementById('audioFile').click()">
-            <p id="fileName">📂 Click to Upload Audio</p>
+        <h1>VoiceGuard AI</h1>
+        <p>Deepfake Detection Neural Network</p>
+
+        <div class="upload-box" onclick="document.getElementById('audioInput').click()">
+            <div style="font-size: 3rem;">📁</div>
+            <p>Click to Upload Audio</p>
+            <p class="file-name" id="fileName"></p>
+            <input type="file" id="audioInput" accept="audio/*" onchange="showFileName()">
         </div>
 
-        <button onclick="analyzeAudio()">🔍 Analyze Voice</button>
+        <button class="btn" onclick="detectAudio()">Analyze Voice</button>
 
-        <div id="result">
-            <div class="result-title">Detection Result: <span id="classification"></span></div>
-            <p>Confidence Score: <strong id="confidence"></strong>%</p>
-            <div class="reasons">
-                <strong>Analysis Report:</strong>
-                <ul id="explanationList" style="padding-left: 20px; margin-top: 5px;"></ul>
-            </div>
-        </div>
+        <div class="loader" id="loader"></div>
+
+        <div id="result"></div>
     </div>
 
     <script>
-        // 1. Show file name when selected
         function showFileName() {
-            const file = document.getElementById('audioFile').files[0];
-            if (file) document.getElementById('fileName').innerText = "✅ Selected: " + file.name;
+            const fileInput = document.getElementById('audioInput');
+            const fileNameDisplay = document.getElementById('fileName');
+            if(fileInput.files.length > 0) {
+                fileNameDisplay.innerText = "Selected: " + fileInput.files[0].name;
+            }
         }
 
-        // 2. The Logic to Call API
-        async function analyzeAudio() {
-            const file = document.getElementById('audioFile').files[0];
-            if (!file) return alert("Please select a file first!");
+        async function detectAudio() {
+            const fileInput = document.getElementById('audioInput');
+            const resultDiv = document.getElementById('result');
+            const loader = document.getElementById('loader');
 
-            // Change Text to "Analyzing..."
-            const btn = document.querySelector("button");
-            const originalText = btn.innerText;
-            btn.innerText = "⏳ Analyzing...";
-            btn.disabled = true;
+            if (fileInput.files.length === 0) {
+                alert("Please select an audio file first!");
+                return;
+            }
+
+            // 1. Show Loading, Hide Result
+            loader.style.display = 'block';
+            resultDiv.style.display = 'none';
+
+            // 2. Prepare Data
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
 
             try {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = async function() {
-                    // Remove "data:audio/mp3;base64," prefix
-                    const base64String = reader.result.split(',')[1];
+                // 3. Send to Python Backend
+                const response = await fetch("/detect-audio/", {
+                    method: "POST",
+                    body: formData
+                });
 
-                    // Send to your Python Backend
-                    const response = await fetch('/api/voice-detection', {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'x-api-key': 'sk_hackathon_team_123' // Authentication
-                        },
-                        body: JSON.stringify({ 
-                            language: "English", 
-                            audioFormat: "mp3", 
-                            audioBase64: base64String 
-                        })
-                    });
+                const data = await response.json();
 
-                    const data = await response.json();
-                    
-                    // Show Results
-                    const resultDiv = document.getElementById('result');
-                    const classSpan = document.getElementById('classification');
-                    
-                    resultDiv.style.display = 'block';
-                    classSpan.innerText = data.classification;
-                    
-                    // Set Colors (Green for Human, Red for AI)
-                    if (data.classification === "AI_GENERATED") {
-                        classSpan.className = "ai";
-                    } else {
-                        classSpan.className = "human";
-                    }
+                // 4. Show Result
+                loader.style.display = 'none';
+                resultDiv.style.display = 'block';
 
-                    document.getElementById('confidence').innerText = (data.confidenceScore * 100).toFixed(1);
-                    
-                    // Show Explanation
-                    const list = document.getElementById('explanationList');
-                    list.innerHTML = `<li>${data.explanation}</li>`;
-                };
+                if (data.prediction === "AI") {
+                    resultDiv.className = "ai";
+                    resultDiv.innerHTML = `🚨 AI DETECTED <br><span style="font-size:0.8rem">Confidence: ${(data.confidence * 100).toFixed(1)}%</span>`;
+                } else {
+                    resultDiv.className = "human";
+                    resultDiv.innerHTML = `✅ HUMAN VERIFIED <br><span style="font-size:0.8rem">Confidence: ${(data.confidence * 100).toFixed(1)}%</span>`;
+                }
+
             } catch (error) {
+                loader.style.display = 'none';
                 alert("Error connecting to server!");
                 console.error(error);
-            } finally {
-                // Reset button
-                btn.innerText = originalText;
-                btn.disabled = false;
             }
         }
     </script>
