@@ -40,15 +40,42 @@ The system follows a modular pipeline architecture designed for accuracy and spe
 
 ### 📥 Request Format (JSON)
 
+```json
 {
   "is_ai_generated": true,
   "confidence_score": 0.985,
   "message": "🚨 Synthetic patterns detected."
 }
 
-```json
 {
   "language": "English",
   "audio_format": "mp3",
   "audio_base64": "<YOUR_BASE64_STRING>"
 }
+
+## 🛠️ Local Installation & Setup
+
+Follow these steps to run the detection engine on your local machine.
+
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/Srv99x/voice-detection-ai.git](https://github.com/Srv99x/voice-detection-ai.git)
+cd voice-detection-ai
+
+### 2.Create a virtual environment
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Mac/Linux
+python3 -m venv venv
+source venv/bin/activate
+
+### 3. Install dependencies
+pip install -r requirements.txt
+
+### 4. Run the server
+uvicorn main:app --reload
+The API will be available at http://127.0.0.1:8000
+
+
