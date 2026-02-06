@@ -39,6 +39,13 @@ The system follows a modular pipeline architecture designed for accuracy and spe
 | `/` | `GET` | Health check and server status. |
 
 ### 📥 Request Format (JSON)
+
+{
+  "is_ai_generated": true,
+  "confidence_score": 0.985,
+  "message": "🚨 Synthetic patterns detected."
+}
+
 ```json
 {
   "language": "English",
