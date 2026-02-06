@@ -1,62 +1,150 @@
+"""
+Test script for the AI Voice Detection API (Base64 Version)
+This demonstrates how to call the refactored API endpoint with base64-encoded audio
+"""
+
 import requests
+import json
 import base64
 
-import glob
+# API Configuration
+API_URL = "http://localhost:8000/detect-audio/"
+API_KEY = "HACKATHON_SECRET_KEY_123"
 
-# 1. Define files to test (Recursive)
-files_to_test = []
-for ext in ["*.wav", "*.mp3"]:
-    files_to_test.extend(glob.glob(f"dataset/real/**/{ext}", recursive=True))
-    files_to_test.extend(glob.glob(f"dataset/ai/**/{ext}", recursive=True))
+# Path to your local audio file for testing
+AUDIO_FILE_PATH = "test_audio.mp3"  # Replace with your actual audio file path
 
-# 2. Setup API
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-api_key = os.getenv("SECRET_API_KEY", "sk_hackathon_team_123")
-
-url = "http://127.0.0.1:8000/api/voice-detection"
-headers = {
-    "Content-Type": "application/json",
-    "x-api-key": api_key
-}
-
-print(f"🔎 Testing {len(files_to_test)} files...\n")
-
-import os
-
-# ...
-
-for filename in files_to_test:
-    # Dynamically detect language from folder name (e.g. dataset/real/Tamil/file.mp3)
-    folder_name = os.path.basename(os.path.dirname(filename))
-    
-    # Default to English if the folder isn't one of the 5
-    detected_language = "English"
-    if folder_name in ["Tamil", "English", "Hindi", "Malayalam", "Telugu"]:
-        detected_language = folder_name
-
-    # Convert to Base64
-    with open(filename, "rb") as f:
-        audio_data = f.read()
-        b64_string = base64.b64encode(audio_data).decode("utf-8")
-
-    # Send Request
-    payload = {
-        "language": detected_language,
-        "audioFormat": "mp3",
-        "audioBase64": b64_string
-    }
-
+def encode_audio_file(file_path):
+    """Read an audio file and encode it to base64"""
     try:
-        response = requests.post(url, json=payload, headers=headers)
-        result = response.json()
-        
-        # Pretty Print
-        status = "✅" if result.get('status') == 'success' else "❌"
-        print(f"{status} File: {filename}")
-        print(f"   Prediction: {result.get('classification')} (Confidence: {result.get('confidenceScore')})")
-        print("-" * 50)
-    except Exception as e:
-        print(f"❌ Error testing {filename}: {e}")
+        with open(file_path, "rb") as audio_file:
+            audio_bytes = audio_file.read()
+            audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+            return audio_base64
+    except FileNotFoundError:
+        print(f"Error: File '{file_path}' not found!")
+        return None
+
+def test_api_with_base64_audio():
+    """Test the API with base64-encoded audio"""
+    print("Encoding audio file to base64...")
+    
+    # Encode the audio file
+    audio_base64 = encode_audio_file(AUDIO_FILE_PATH)
+    
+    if not audio_base64:
+        print("Failed to encode audio file. Exiting.")
+        return
+    
+    print(f"Audio encoded successfully ({len(audio_base64)} characters)")
+    print()
+    
+    # Prepare the request
+    headers = {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "audio_base64": audio_base64,
+        "language": "en",  # Language code
+        "audio_format": "mp3"  # Audio format
+    }
+    
+    print("Sending request to API...")
+    response = requests.post(API_URL, json=payload, headers=headers)
+    
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}")
+    print()
+
+def test_api_with_authorization_header():
+    """Test using Authorization header instead of x-api-key"""
+    print("Testing with Authorization header...")
+    
+    audio_base64 = encode_audio_file(AUDIO_FILE_PATH)
+    
+    if not audio_base64:
+        print("Failed to encode audio file. Exiting.")
+        return
+    
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "audio_base64": audio_base64,
+        "language": "en",
+        "audio_format": "mp3"
+    }
+    
+    response = requests.post(API_URL, json=payload, headers=headers)
+    
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}")
+    print()
+
+def test_api_without_auth():
+    """Test without authentication (should fail with 401)"""
+    print("Testing without authentication (should return 401)...")
+    
+    audio_base64 = encode_audio_file(AUDIO_FILE_PATH)
+    
+    if not audio_base64:
+        return
+    
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "audio_base64": audio_base64,
+        "language": "en",
+        "audio_format": "mp3"
+    }
+    
+    response = requests.post(API_URL, json=payload, headers=headers)
+    
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}")
+    print()
+
+def test_api_with_invalid_base64():
+    """Test with invalid base64 data (should fail with 400)"""
+    print("Testing with invalid base64 (should return 400)...")
+    
+    headers = {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "audio_base64": "INVALID_BASE64_DATA!!!",
+        "language": "en",
+        "audio_format": "mp3"
+    }
+    
+    response = requests.post(API_URL, json=payload, headers=headers)
+    
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {json.dumps(response.json(), indent=2)}")
+    print()
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("AI Voice Detection API Test Suite (Base64 Version)")
+    print("=" * 60)
+    print()
+    
+    # Test valid requests
+    test_api_with_base64_audio()
+    test_api_with_authorization_header()
+    
+    # Test error cases
+    test_api_without_auth()
+    test_api_with_invalid_base64()
+    
+    print("=" * 60)
+    print("Tests completed!")
+    print("=" * 60)
