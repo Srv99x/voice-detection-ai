@@ -25,7 +25,12 @@ VALID_API_KEY = os.getenv("SECRET_API_KEY", "HACKATHON_SECRET_KEY_123")
 # CORS — allow Vercel frontend + local dev to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: replace * with your Vercel URL after deploy
+    allow_origins=[
+        "https://srv99x-voice-detector-live.hf.space",  # HF Space itself
+        "https://*.vercel.app",                          # Vercel preview/prod deployments
+        "http://localhost:5173",                         # Local Vite dev server
+        "http://localhost:3000",                         # Local alt port
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
