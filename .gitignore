@@ -10,5 +10,8 @@ dataset/
 __pycache__/
 *.pyc
 
-# (Optional) Keep the model files because Hugging Face needs them
-# but normally we ignore them. For now, keep them.
+# SECRET: Never commit the .env file (contains API keys)
+.env
+
+# Ignore large model binary files (regenerate with train_model.py)
+*.pkl

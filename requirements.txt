@@ -1,9 +1,10 @@
 fastapi
-uvicorn
+uvicorn[standard]
 python-multipart
 torch
 transformers
 librosa
+soundfile
 pydub
 scikit-learn
 numpy
@@ -11,3 +12,4 @@ joblib
 python-dotenv
 requests
 pydantic
+accelerate

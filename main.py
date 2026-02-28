@@ -1,7 +1,7 @@
 import os
 import torch
 import numpy as np
-import pickle
+import joblib
 import librosa
 import io
 import base64
@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from transformers import Wav2Vec2Processor, Wav2Vec2Model
+from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2Model
 from typing import Optional
 
 # --- 1. SETUP & CONFIGURATION ---
@@ -27,13 +27,12 @@ except:
 # Load AI Brains (Global Variables)
 print("Loading Model...")
 try:
-    with open("hackathon_model.pkl", "rb") as f:
-        classifier = pickle.load(f)
-    with open("model_scaler.pkl", "rb") as f:
-        scaler = pickle.load(f)
+    # NOTE: Models were saved with joblib in train_model.py, so load with joblib
+    classifier = joblib.load("hackathon_model.pkl")
+    scaler = joblib.load("model_scaler.pkl")
     
-    # Load Meta's Wav2Vec2 (The Feature Extractor)
-    processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-xlsr-53")
+    # Load Meta's Wav2Vec2 (Use FeatureExtractor, same as used in train_model.py)
+    processor = Wav2Vec2FeatureExtractor.from_pretrained("facebook/wav2vec2-large-xlsr-53")
     model = Wav2Vec2Model.from_pretrained("facebook/wav2vec2-large-xlsr-53")
     print("✅ Brain Loaded!")
 except Exception as e:

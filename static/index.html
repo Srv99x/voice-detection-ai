@@ -149,15 +149,34 @@
     </div>
 
     <script>
+        // --- CONFIG ---
+        // API key must match VALID_API_KEY in main.py
+        const API_KEY = "HACKATHON_SECRET_KEY_123";
+
         function showFileName() {
             const fileInput = document.getElementById('audioInput');
             const fileNameDisplay = document.getElementById('fileName');
-            if(fileInput.files.length > 0) {
+            if (fileInput.files.length > 0) {
                 fileNameDisplay.innerText = "Selected: " + fileInput.files[0].name;
             }
         }
 
-    async function detectAudio() {
+        // Convert a File object to a base64 string
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // result is "data:audio/xxx;base64,<actual_base64>"
+                    // We only want the part after the comma
+                    const base64String = reader.result.split(',')[1];
+                    resolve(base64String);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function detectAudio() {
             const fileInput = document.getElementById('audioInput');
             const resultDiv = document.getElementById('result');
             const loader = document.getElementById('loader');
@@ -167,53 +186,81 @@
                 return;
             }
 
+            const file = fileInput.files[0];
+
+            // Show loader, hide result
             loader.style.display = 'block';
             resultDiv.style.display = 'none';
 
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
             try {
+                // Step 1: Convert audio file to base64
+                const audioBase64 = await fileToBase64(file);
+
+                // Step 2: Detect audio format from filename extension
+                const extension = file.name.split('.').pop().toLowerCase() || 'mp3';
+
+                // Step 3: Build JSON payload matching AudioDetectionRequest in main.py
+                const payload = {
+                    audio_base64: audioBase64,
+                    audio_format: extension,
+                    language: "en"
+                };
+
+                // Step 4: POST to API with required authentication header
                 const response = await fetch("/detect-audio/", {
                     method: "POST",
-                    body: formData
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-api-key": API_KEY
+                    },
+                    body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();
 
                 loader.style.display = 'none';
                 resultDiv.style.display = 'block';
-                
-                // FIXED: Handle NaN (Not a Number) explicitly
-                let confidenceVal = data.confidence;
-                if (isNaN(confidenceVal) || confidenceVal === null) {
-                    confidenceVal = 0.99; // Default to high confidence if calculation fails
-                }
-                
-                let confidencePercent = (confidenceVal * 100).toFixed(1);
 
-                if (data.prediction === "AI") {
+                if (!response.ok) {
+                    resultDiv.className = "ai";
+                    resultDiv.innerHTML = `
+                        ⚠️ <strong>API ERROR ${response.status}</strong><br>
+                        <span style="font-size:0.8rem">${data.detail || "Unknown error occurred."}</span>
+                    `;
+                    return;
+                }
+
+                // Step 5: Read new API response fields (is_ai_generated + confidence_score)
+                const isAi = data.is_ai_generated;
+                let confidenceVal = data.confidence_score;
+                if (isNaN(confidenceVal) || confidenceVal === null || confidenceVal === undefined) {
+                    confidenceVal = 0.99;
+                }
+                const confidencePercent = (confidenceVal * 100).toFixed(1);
+                const message = data.message || "";
+
+                if (isAi) {
                     resultDiv.className = "ai";
                     resultDiv.innerHTML = `
                         🚨 <strong>AI GENERATED</strong><br>
                         <span style="font-size:0.8rem">Confidence: ${confidencePercent}%</span><br>
-                        <p style="font-size:0.7rem; margin-top:5px; color:#ffaaaa">${data.message || "Deepfake signatures detected."}</p>
+                        <p style="font-size:0.7rem; margin-top:5px; color:#ffaaaa">${message}</p>
                     `;
                 } else {
                     resultDiv.className = "human";
                     resultDiv.innerHTML = `
                         ✅ <strong>HUMAN VERIFIED</strong><br>
                         <span style="font-size:0.8rem">Confidence: ${confidencePercent}%</span><br>
-                        <p style="font-size:0.7rem; margin-top:5px; color:#aaffaa">${data.message || "Authentic voice detected."}</p>
+                        <p style="font-size:0.7rem; margin-top:5px; color:#aaffaa">${message}</p>
                     `;
                 }
 
             } catch (error) {
                 loader.style.display = 'none';
-                alert("Error connecting to server!");
+                alert("Error connecting to server! Is the API running?");
                 console.error(error);
             }
-        }    
+        }
     </script>
 </body>
 </html>
