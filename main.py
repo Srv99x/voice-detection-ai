@@ -8,6 +8,7 @@ import librosa
 import io
 import base64
 from fastapi import FastAPI, HTTPException, Header
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -20,6 +21,15 @@ app = FastAPI(title="AI Voice Detection API", version="1.0.0")
 # API Key Configuration
 # Load API key from .env (never hardcode secrets in source code!)
 VALID_API_KEY = os.getenv("SECRET_API_KEY", "HACKATHON_SECRET_KEY_123")
+
+# CORS — allow Vercel frontend + local dev to call this API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # TODO: replace * with your Vercel URL after deploy
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount the static folder (Frontend) - Optional for hackathon
 try:
