@@ -193,18 +193,22 @@ async def detect_audio(
         ai_score = float(probs[1])
         
         # --- STEP 10: DECISION LOGIC ---
+        # Use balanced 0.5 threshold - standard for binary classifiers
+        # whichever class has the higher probability wins
         if np.isnan(human_score) or np.isnan(ai_score):
             is_ai = True
             confidence = 0.95
-            message = "Invalid signal structure detected."
-        elif human_score > 0.98:
+            message = "Invalid signal structure detected. Classified as synthetic."
+        elif ai_score >= human_score:
+            # AI score is equal or higher → classify as AI generated
+            is_ai = True
+            confidence = ai_score
+            message = "Synthetic spectral patterns detected. AI-generated voice signature found."
+        else:
+            # human_score is strictly higher → classify as human
             is_ai = False
             confidence = human_score
             message = "Authentic vocal micro-tremors and breathing patterns verified."
-        else:
-            is_ai = True
-            confidence = ai_score if ai_score > 0.5 else (1.0 - human_score)
-            message = "Synthetic spectral smoothness and lack of natural anomalies detected."
 
         # --- STEP 11: RETURN RESPONSE ---
         return AudioDetectionResponse(
