@@ -60,7 +60,7 @@ const STEPS = [
   '[ 4/4 ] Generating verdict...',
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 const API_KEY = import.meta.env.VITE_API_KEY || 'HACKATHON_SECRET_KEY_123';
 
 const STORAGE_KEY = 'voiceguard_stats';
