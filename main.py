@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()  # Load variables from .env file
 import torch
 import numpy as np
 import joblib
@@ -16,7 +18,8 @@ from typing import Optional
 app = FastAPI(title="AI Voice Detection API", version="1.0.0")
 
 # API Key Configuration
-VALID_API_KEY = "HACKATHON_SECRET_KEY_123"
+# Load API key from .env (never hardcode secrets in source code!)
+VALID_API_KEY = os.getenv("SECRET_API_KEY", "HACKATHON_SECRET_KEY_123")
 
 # Mount the static folder (Frontend) - Optional for hackathon
 try:
