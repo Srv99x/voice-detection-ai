@@ -13,3 +13,4 @@ python-dotenv
 requests
 pydantic
 accelerate
+slowapi

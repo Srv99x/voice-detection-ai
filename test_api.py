@@ -6,35 +6,43 @@ This demonstrates how to call the refactored API endpoint with base64-encoded au
 import requests
 import json
 import base64
+import io
+import wave
+
+import numpy as np
+import pytest
 
 # API Configuration
 API_URL = "http://localhost:8000/detect-audio/"
 API_KEY = "HACKATHON_SECRET_KEY_123"
 
-# Path to your local audio file for testing
-AUDIO_FILE_PATH = "test_audio.mp3"  # Replace with your actual audio file path
+def _generate_test_audio_base64(duration_seconds=3, sample_rate=16000, frequency_hz=440):
+    """Generate a sine-wave WAV in memory and return it as base64."""
+    sample_count = duration_seconds * sample_rate
+    time_axis = np.linspace(0, duration_seconds, sample_count, endpoint=False, dtype=np.float32)
+    waveform = 0.3 * np.sin(2 * np.pi * frequency_hz * time_axis)
+    pcm_audio = np.int16(waveform * 32767)
 
-def encode_audio_file(file_path):
-    """Read an audio file and encode it to base64"""
-    try:
-        with open(file_path, "rb") as audio_file:
-            audio_bytes = audio_file.read()
-            audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
-            return audio_base64
-    except FileNotFoundError:
-        print(f"Error: File '{file_path}' not found!")
-        return None
+    wav_buffer = io.BytesIO()
+    with wave.open(wav_buffer, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)  # 16-bit PCM
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(pcm_audio.tobytes())
 
-def test_api_with_base64_audio():
+    return base64.b64encode(wav_buffer.getvalue()).decode("utf-8")
+
+
+@pytest.fixture
+def test_audio_base64():
+    """Provide generated 3-second WAV audio encoded as base64 for API tests."""
+    return _generate_test_audio_base64()
+
+def test_api_with_base64_audio(test_audio_base64):
     """Test the API with base64-encoded audio"""
-    print("Encoding audio file to base64...")
-    
-    # Encode the audio file
-    audio_base64 = encode_audio_file(AUDIO_FILE_PATH)
-    
-    if not audio_base64:
-        print("Failed to encode audio file. Exiting.")
-        return
+    print("Generating synthetic WAV and encoding to base64...")
+
+    audio_base64 = test_audio_base64
     
     print(f"Audio encoded successfully ({len(audio_base64)} characters)")
     print()
@@ -48,7 +56,7 @@ def test_api_with_base64_audio():
     payload = {
         "audio_base64": audio_base64,
         "language": "en",  # Language code
-        "audio_format": "mp3"  # Audio format
+        "audio_format": "wav"  # Audio format
     }
     
     print("Sending request to API...")
@@ -58,15 +66,11 @@ def test_api_with_base64_audio():
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     print()
 
-def test_api_with_authorization_header():
+def test_api_with_authorization_header(test_audio_base64):
     """Test using Authorization header instead of x-api-key"""
     print("Testing with Authorization header...")
-    
-    audio_base64 = encode_audio_file(AUDIO_FILE_PATH)
-    
-    if not audio_base64:
-        print("Failed to encode audio file. Exiting.")
-        return
+
+    audio_base64 = test_audio_base64
     
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -76,7 +80,7 @@ def test_api_with_authorization_header():
     payload = {
         "audio_base64": audio_base64,
         "language": "en",
-        "audio_format": "mp3"
+        "audio_format": "wav"
     }
     
     response = requests.post(API_URL, json=payload, headers=headers)
@@ -85,14 +89,11 @@ def test_api_with_authorization_header():
     print(f"Response: {json.dumps(response.json(), indent=2)}")
     print()
 
-def test_api_without_auth():
+def test_api_without_auth(test_audio_base64):
     """Test without authentication (should fail with 401)"""
     print("Testing without authentication (should return 401)...")
-    
-    audio_base64 = encode_audio_file(AUDIO_FILE_PATH)
-    
-    if not audio_base64:
-        return
+
+    audio_base64 = test_audio_base64
     
     headers = {
         "Content-Type": "application/json"
@@ -101,7 +102,7 @@ def test_api_without_auth():
     payload = {
         "audio_base64": audio_base64,
         "language": "en",
-        "audio_format": "mp3"
+        "audio_format": "wav"
     }
     
     response = requests.post(API_URL, json=payload, headers=headers)
@@ -136,13 +137,15 @@ if __name__ == "__main__":
     print("AI Voice Detection API Test Suite (Base64 Version)")
     print("=" * 60)
     print()
+
+    generated_audio_base64 = _generate_test_audio_base64()
     
     # Test valid requests
-    test_api_with_base64_audio()
-    test_api_with_authorization_header()
+    test_api_with_base64_audio(generated_audio_base64)
+    test_api_with_authorization_header(generated_audio_base64)
     
     # Test error cases
-    test_api_without_auth()
+    test_api_without_auth(generated_audio_base64)
     test_api_with_invalid_base64()
     
     print("=" * 60)

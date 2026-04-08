@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 load_dotenv()  # Load variables from .env file
 import torch
@@ -7,20 +8,41 @@ import joblib
 import librosa
 import io
 import base64
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2Model
 from typing import Optional
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # --- 1. SETUP & CONFIGURATION ---
-app = FastAPI(title="AI Voice Detection API", version="1.0.0")
 
-# API Key Configuration
-# Load API key from .env (never hardcode secrets in source code!)
-VALID_API_KEY = os.getenv("SECRET_API_KEY", "HACKATHON_SECRET_KEY_123")
+# Rate limiter — keyed by client IP
+limiter = Limiter(key_func=get_remote_address)
+
+# Lifespan: validate required env vars before the server accepts traffic
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    api_key = os.getenv("SECRET_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "SECRET_API_KEY environment variable is not set. "
+            "Create a .env file with SECRET_API_KEY=<your-key> and restart."
+        )
+    yield
+
+app = FastAPI(title="AI Voice Detection API", version="1.0.0", lifespan=lifespan)
+
+# Attach rate limiter and its 429 error handler to the app
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# API Key — sourced exclusively from the environment (no insecure default)
+VALID_API_KEY = os.getenv("SECRET_API_KEY")  # guaranteed non-None after lifespan check
 
 # CORS — allow Vercel frontend + local dev to call this API
 app.add_middleware(
@@ -95,15 +117,16 @@ def verify_api_key(authorization: Optional[str] = Header(None), x_api_key: Optio
 @app.get("/")
 async def read_root():
     return JSONResponse(content={
-        "message": "AI Voice Detection API is Running!",
-        "version": "1.0.0",
-        "endpoint": "/detect-audio/",
-        "method": "POST"
+        "status": "ok",
+        "model": "wav2vec2-large-xlsr-53 + MLP",
+        "version": "1.0"
     })
 
 # --- 5. THE DETECTION ENGINE (HACKATHON API ENDPOINT) ---
 @app.post("/detect-audio/", response_model=AudioDetectionResponse)
+@limiter.limit("10/minute")  # max 10 requests per minute per IP
 async def detect_audio(
+    http_request: Request,  # required by slowapi for IP extraction
     request: AudioDetectionRequest,
     authorization: Optional[str] = Header(None),
     x_api_key: Optional[str] = Header(None)

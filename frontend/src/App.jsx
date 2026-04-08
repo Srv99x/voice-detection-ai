@@ -264,9 +264,9 @@ export default function App() {
             <div className="confidence-section">
               <ConfidenceRing percent={result.confidence} isAi={result.isAi} />
               <div className="confidence-details">
-                <p className="detail-label">{result.isAi ? 'AI Probability' : 'Human Probability'}</p>
+                <p className="detail-label">AI Probability</p>
                 <div className="detail-bar-track">
-                  <div className="detail-bar-fill" style={{ width: `${result.confidence}%` }} />
+                  <div className="detail-bar-fill" style={{ width: `${result.isAi ? result.confidence : 100 - result.confidence}%` }} />
                 </div>
                 <p className="detail-label">Confidence Level</p>
                 <div className="detail-bar-track">
