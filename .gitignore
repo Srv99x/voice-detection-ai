@@ -1,17 +1,40 @@
-# Ignore the virtual environment (heavy system files)
+# ── Virtual Environments ───────────────────────────────────────────────────────
 .venv/
 venv/
 env/
 
-# Ignore the dataset (huge audio files)
+# ── Dataset (large audio training files — not needed in repo) ─────────────────
 dataset/
 
-# Ignore cache files
+# ── Python Cache ──────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 
-# SECRET: Never commit the .env file (contains API keys)
+# ── Environment / Secrets (NEVER commit these) ────────────────────────────────
 .env
+.env.*
+!.env.example
 
-# Ignore large model binary files (regenerate with train_model.py)
-*.pkl
+# ── Deployment Scripts (contain tokens) ──────────────────────────────────────
+upload_to_hf.py
+
+# ── Editor & OS Files ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# ── Build Artifacts ───────────────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example

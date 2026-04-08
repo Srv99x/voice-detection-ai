@@ -1,3 +1,15 @@
+---
+title: VoiceGuard AI
+emoji: 🎙️
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+short_description: Real-time deepfake audio detection API (FastAPI + Wav2Vec2)
+---
+
 <div align="center">
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f5ff,100:7b2fff&height=200&section=header&text=VoiceGuard%20AI&fontSize=60&fontColor=ffffff&fontAlignY=38&desc=Neural%20Deepfake%20Audio%20Detection&descAlignY=58&descSize=20" width="100%"/>
@@ -112,9 +124,11 @@ This project was built for a **CyberSecurity Hackathon** and is fully deployed a
 
 **Model Stack:**
 - **Feature Extractor** → `facebook/wav2vec2-large-xlsr-53` (1024-dim embeddings)
-- **Classifier** → `MLPClassifier(hidden_layers=[128, 64], max_iter=500)`
+- **Classifier** → `MLP Classifier (MLPClassifier with hidden layers 128, 64)`, `max_iter=500`
 - **Scaler** → `StandardScaler` (fitted on training set)
 - **Training augmentation** → Original + Gaussian noise + Pitch ±2 semitones
+
+> **Why MLP?** Wav2Vec2 produces 1024-dimensional embeddings that capture highly non-linear speech phenomena; an MLP with hidden layers [128, 64] can learn these complex decision boundaries far more effectively than logistic regression, which is limited to linear separability in the original feature space.
 
 ---
 
@@ -382,7 +396,7 @@ voice-detection-ai/
 │   ├── model_scaler.pkl         # Fitted StandardScaler (~24 KB)
 │   ├── requirements.txt         # Python dependencies
 │   ├── Dockerfile               # Container config (port 7860 for HF Spaces)
-│   └── ci.yml                   # GitHub Actions CI pipeline
+│   └── .github/workflows/ci.yml  # GitHub Actions CI pipeline
 │
 └── ⚛️ Frontend (frontend/)
     ├── src/
